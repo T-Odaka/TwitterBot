@@ -9,10 +9,8 @@ import (
 
 func main() {
 	const url string = "https://www.yahoo.co.jp/"
-	fmt.Println("Hello,世界!!", url)
 
 	driver := agouti.ChromeDriver()
-
 	err := driver.Start()
 	defer driver.Stop()
 	if err != nil {
