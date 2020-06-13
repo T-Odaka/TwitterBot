@@ -2,15 +2,21 @@ package main
 
 import (
 	"fmt"
-	"github.com/sclevine/agouti"
 	"log"
 	"time"
+
+	"github.com/sclevine/agouti"
 )
 
 func main() {
 	const url string = "https://www.yahoo.co.jp/"
 
-	driver := agouti.ChromeDriver()
+	driver := agouti.ChromeDriver(
+		agouti.ChromeOptions("args", []string{
+			// ヘッドレスモード（ブラウザ非表示）でChrome起動の設定
+			"--headless",
+		}),
+	)
 	err := driver.Start()
 	defer driver.Stop()
 	if err != nil {
@@ -26,6 +32,14 @@ func main() {
 	err = page.Navigate(url) // 指定したurlにアクセスする
 	if err != nil {
 		log.Printf("Failed to navigate: %v", err)
+	}
+
+	// ニュース蘭の情報を取得する
+	s := page.AllByClass("_2j0udhv5jERZtYzddeDwcv")
+	max, _ := s.Count()
+
+	for i:=0;i<max;i++ {
+		fmt.Println(s.At(i).Text())
 	}
 
 	time.Sleep(1 * time.Second)
