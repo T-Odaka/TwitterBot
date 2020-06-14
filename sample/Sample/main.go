@@ -18,7 +18,13 @@ func main() {
 		}),
 	)
 	err := driver.Start()
-	defer driver.Stop()
+	defer func(){
+		err = driver.Stop()
+		if err != nil {
+			log.Println(err)
+		}
+	}()
+
 	if err != nil {
 		log.Fatal("Fatal to start driver:")
 	}
@@ -44,9 +50,15 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 	// XPathにFillに"Golang"を入力
-	page.FindByXPath("/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/input").Fill("Golang")
+	err = page.FindByXPath("/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/input").Fill("Golang")
+	if err != nil {
+		log.Println(err)
+	}
+
 	time.Sleep(1 * time.Second)
 	// XPathに指定された要素をクリック
-	page.FindByXPath("/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/button/span").Click()
-	time.Sleep(5 * time.Second)
+	err = page.FindByXPath("/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/button/span").Click()
+	if err != nil {
+		log.Println(err)
+	}
 }
