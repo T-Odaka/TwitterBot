@@ -1,0 +1,4 @@
+#.gitignore
+
+/sample/Sample/ChromeUserData/
+/sample/Sample/.idea/
