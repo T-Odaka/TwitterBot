@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/sclevine/agouti"
 	"log"
@@ -26,9 +27,9 @@ func getDriverPath(dir string) string {
 		fileSeparate = "\\"
 		path = fmt.Sprintf("%s%s", strings.Split(dir, "TwitterBot")[0], filepath.FromSlash("TwitterBot/drivers/win32"))
 	case osMac:
-		path = fmt.Sprintf("%s%s", strings.Split(dir, "twitterBot")[0], "TwitterBot/drivers/mac")
+		path = fmt.Sprintf("%s%s", strings.Split(dir, "TwitterBot")[0], "TwitterBot/drivers/mac")
 	case osLinux:
-		path = fmt.Sprintf("%s%s", strings.Split(dir, "twitterBot")[0], "TwitterBot/drivers/linux")
+		path = fmt.Sprintf("%s%s", strings.Split(dir, "TwitterBot")[0], "TwitterBot/drivers/linux")
 	default:
 		log.Fatal("OS could not be determined.")
 	}
@@ -44,18 +45,10 @@ func main() {
 	pathEnv := []string{os.Getenv("PATH"), getDriverPath(dir)}
 
 	// 環境変数PATHに、ファイルドライバのパスを設定する
-	_ = os.Setenv("PATH", fmt.Sprintf("%s", strings.Join(pathEnv, pathSeparate)))
+	_ = os.Setenv("PATH", strings.Join(pathEnv, pathSeparate))
 	fmt.Println(os.Getenv("PATH"))
 
 	const url string = "https://www.yahoo.co.jp/"
-
-	// current dirにChromeUserDataというディレクトリが存在するか確認し、なければ作成する
-	if _, err := os.Stat(fmt.Sprintf("%s%s", fileSeparate,"./ChromeUserData")); os.IsExist(err) {
-		fmt.Println("creating ChromeUserData files.")
-		if err := os.Mkdir("ChromeUserData", 0777); err != nil {
-			log.Fatal(err)
-		}
-	}
 
 	driver := agouti.ChromeDriver(
 		agouti.ChromeOptions("args", []string{
@@ -77,18 +70,18 @@ func main() {
 	}()
 
 	if err != nil {
-		log.Fatal("Fatal to start driver:")
+		log.Fatal(err)
 	}
 
 	// クロームを起動。page型の返り値（セッション）を返す。
 	page, err := driver.NewPage(agouti.Browser("chrome"))
 	if err != nil {
-		log.Printf("Failed to open page: %v", err)
+		log.Fatal(err)
 	}
 
 	err = page.Navigate(url) // 指定したurlにアクセスする
 	if err != nil {
-		log.Printf("Failed to navigate: %v", err)
+		log.Fatal(err)
 	}
 
 	// ニュース蘭の情報を取得する
@@ -113,6 +106,27 @@ func main() {
 		log.Println(err)
 	}
 
-	// Twitterのログイン確認用に２分間のWaitを入れる
-	time.Sleep(2 * time.Minute)
+	// finという名前の構造体チャネルを作成
+	fin := make(chan struct{}, 1)
+	// mainプログラム（メインゴルーチン）終了時に、チャネルを開放する（チャネル使用時は開放は必須。）
+	defer close(fin)
+
+	// 別のプロセス（ゴルーチン）で無名関数を実行する（並列処理）。
+	go func(fin chan<- struct{}) {
+		// 標準入力を取得する
+		sc := bufio.NewScanner(os.Stdin)
+		for {
+			// 1秒待つ
+			time.Sleep(1 * time.Second)
+			// １行取得（文字の末尾に改行が入っていること）
+			sc.Scan()
+			// 入力された文字がquitまたはexitだった場合は、finチャネルに空構造体を送信する
+			if sc.Text() == "quit" || sc.Text() == "exit" {
+				fin <- struct{}{}
+			}
+		}
+	}(fin)
+
+	// finチャネルに値が送信するまで待つ
+	<- fin
 }
