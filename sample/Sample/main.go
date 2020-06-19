@@ -5,29 +5,52 @@ import (
 	"github.com/sclevine/agouti"
 	"log"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
 
+const osWindows string = "windows"
+const osMac string = "darwin"
+const osLinux string = "linux"
+var pathSeparate string = ":"
+var fileSeparate string = "/"
+
 func getDriverPath(dir string) string {
-	var sep string = fmt.Sprintf("%s%s", strings.Split(dir, "twitterBot")[0], "twitterBot/drivers/mac")
-	return sep
+	var path string
+
+	switch runtime.GOOS {
+	case osWindows:
+		pathSeparate = ";"
+		fileSeparate = "\\"
+		path = fmt.Sprintf("%s%s", strings.Split(dir, "TwitterBot")[0], filepath.FromSlash("TwitterBot/drivers/win32"))
+	case osMac:
+		path = fmt.Sprintf("%s%s", strings.Split(dir, "twitterBot")[0], "TwitterBot/drivers/mac")
+	case osLinux:
+		path = fmt.Sprintf("%s%s", strings.Split(dir, "twitterBot")[0], "TwitterBot/drivers/linux")
+	default:
+		log.Fatal("OS could not be determined.")
+	}
+	return path
 }
 
 func main() {
+	// アプリのディレクトリを取得する
 	dir, _ := os.Getwd()
 	fmt.Println(dir)
 
+	// ファイルドライバのパスを取得する
 	pathEnv := []string{os.Getenv("PATH"), getDriverPath(dir)}
 
-	_ = os.Setenv("PATH", fmt.Sprintf("%s", strings.Join(pathEnv, ":")))
+	// 環境変数PATHに、ファイルドライバのパスを設定する
+	_ = os.Setenv("PATH", fmt.Sprintf("%s", strings.Join(pathEnv, pathSeparate)))
 	fmt.Println(os.Getenv("PATH"))
-
 
 	const url string = "https://www.yahoo.co.jp/"
 
 	// current dirにChromeUserDataというディレクトリが存在するか確認し、なければ作成する
-	if _, err := os.Stat("./ChromeUserData"); os.IsExist(err) {
+	if _, err := os.Stat(fmt.Sprintf("%s%s", fileSeparate,"./ChromeUserData")); os.IsExist(err) {
 		fmt.Println("creating ChromeUserData files.")
 		if err := os.Mkdir("ChromeUserData", 0777); err != nil {
 			log.Fatal(err)
