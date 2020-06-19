@@ -2,14 +2,28 @@ package main
 
 import (
 	"fmt"
+	"github.com/sclevine/agouti"
 	"log"
 	"os"
+	"strings"
 	"time"
-
-	"github.com/sclevine/agouti"
 )
 
+func getDriverPath(dir string) string {
+	var sep string = fmt.Sprintf("%s%s", strings.Split(dir, "twitterBot")[0], "twitterBot/drivers/mac")
+	return sep
+}
+
 func main() {
+	dir, _ := os.Getwd()
+	fmt.Println(dir)
+
+	pathEnv := []string{os.Getenv("PATH"), getDriverPath(dir)}
+
+	_ = os.Setenv("PATH", fmt.Sprintf("%s", strings.Join(pathEnv, ":")))
+	fmt.Println(os.Getenv("PATH"))
+
+
 	const url string = "https://www.yahoo.co.jp/"
 
 	// current dirにChromeUserDataというディレクトリが存在するか確認し、なければ作成する
