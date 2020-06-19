@@ -12,43 +12,20 @@ import (
 	"time"
 )
 
+const url string = "https://www.yahoo.co.jp/"
 const osWindows string = "windows"
 const osMac string = "darwin"
 const osLinux string = "linux"
 var pathSeparate string = ":"
 var fileSeparate string = "/"
 
-func getDriverPath(dir string) string {
-	var path string
-
-	switch runtime.GOOS {
-	case osWindows:
-		pathSeparate = ";"
-		fileSeparate = "\\"
-		path = fmt.Sprintf("%s%s", strings.Split(dir, "TwitterBot")[0], filepath.FromSlash("TwitterBot/drivers/win32"))
-	case osMac:
-		path = fmt.Sprintf("%s%s", strings.Split(dir, "TwitterBot")[0], "TwitterBot/drivers/mac")
-	case osLinux:
-		path = fmt.Sprintf("%s%s", strings.Split(dir, "TwitterBot")[0], "TwitterBot/drivers/linux")
-	default:
-		log.Fatal("OS could not be determined.")
-	}
-	return path
-}
-
 func main() {
 	// アプリのディレクトリを取得する
-	dir, _ := os.Getwd()
-	fmt.Println(dir)
+	dir, err := os.Getwd()
 
-	// ファイルドライバのパスを取得する
-	pathEnv := []string{os.Getenv("PATH"), getDriverPath(dir)}
-
-	// 環境変数PATHに、ファイルドライバのパスを設定する
-	_ = os.Setenv("PATH", strings.Join(pathEnv, pathSeparate))
-	fmt.Println(os.Getenv("PATH"))
-
-	const url string = "https://www.yahoo.co.jp/"
+	if err = setENV(dir); err != nil {
+		log.Fatal(err)
+	}
 
 	driver := agouti.ChromeDriver(
 		agouti.ChromeOptions("args", []string{
@@ -57,11 +34,11 @@ func main() {
 			// Windowのサイズを1280x720にする
 			"--window-size=1280,720",
 			// ログイン情報等を保存するディレクトリを指定。これによって、Twitterのログイン情報を保持することができる
-			"--user-data-dir=./ChromeUserData",
+			"--user-data-dir=" + getUserDataPath(dir),
 		}),
 	)
 
-	err := driver.Start()
+	err = driver.Start()
 	defer func() {
 		err = driver.Stop()
 		if err != nil {
@@ -129,4 +106,48 @@ func main() {
 
 	// finチャネルに値が送信するまで待つ
 	<- fin
+}
+
+func setENV(dir string) error {
+	// ファイルドライバのパスを取得する
+	pathEnv := []string{os.Getenv("PATH"), getDriverPath(dir)}
+	// 環境変数PATHに、ファイルドライバのパスを設定する
+	err := os.Setenv("PATH", strings.Join(pathEnv, pathSeparate))
+
+	return err
+}
+
+
+func getDriverPath(dir string) (path string) {
+	var twitterBotPath string = strings.Split(dir, "TwitterBot")[0]
+
+	switch runtime.GOOS {
+	case osWindows:
+		pathSeparate = ";"
+		fileSeparate = "\\"
+		path = fmt.Sprintf("%s%s", twitterBotPath, filepath.FromSlash("TwitterBot/drivers/win32"))
+	case osMac:
+		path = fmt.Sprintf("%s%s", twitterBotPath, "TwitterBot/drivers/mac")
+	case osLinux:
+		path = fmt.Sprintf("%s%s", twitterBotPath, "TwitterBot/drivers/linux")
+	default:
+		log.Fatal("OS could not be determined.")
+	}
+	return
+}
+
+func getUserDataPath(dir string) (path string) {
+	var twitterBotPath string = strings.Split(dir, "TwitterBot")[0]
+
+	switch runtime.GOOS {
+	case osWindows:
+		path = fmt.Sprintf("%s%s", twitterBotPath, filepath.FromSlash("TwitterBot/ChromeUserData"))
+	case osMac:
+		path = fmt.Sprintf("%s%s", twitterBotPath, "TwitterBot/ChromeUserData")
+	case osLinux:
+		path = fmt.Sprintf("%s%s", twitterBotPath, "TwitterBot/ChromeUserData")
+	default:
+		log.Fatal("OS could not be determined.")
+	}
+	return
 }

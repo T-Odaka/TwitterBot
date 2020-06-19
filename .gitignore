@@ -1,4 +1,4 @@
 #.gitignore
 
-/sample/Sample/ChromeUserData/
+/ChromeUserData
 /sample/Sample/.idea/
