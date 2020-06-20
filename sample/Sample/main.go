@@ -3,8 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/sclevine/agouti"
+	"html/template"
+	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -20,7 +25,32 @@ const osLinux string = "linux"
 var pathSeparate string = ":"
 var fileSeparate string = "/"
 
+func indexHandler(c echo.Context) error {
+	return c.Render(http.StatusOK, "index", nil)
+}
+
+type Template struct {
+	templates *template.Template
+}
+
+func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+	return t.templates.ExecuteTemplate(w, name, data)
+}
+
 func main() {
+	e := echo.New()
+	e.HideBanner = true
+	e.Use(middleware.CORS())
+	e.Use(middleware.Logger())
+
+	t := &Template{templates: template.Must(template.ParseGlob("public/*.html"))}
+	e.Renderer = t
+
+	go func(e *echo.Echo) {
+		e.GET("/", indexHandler)
+		e.Logger.Fatal(e.Start(":1323"))
+	}(e)
+
 	// アプリのディレクトリを取得する
 	dir, err := os.Getwd()
 
