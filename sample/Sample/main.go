@@ -16,6 +16,7 @@ const url string = "https://www.yahoo.co.jp/"
 const osWindows string = "windows"
 const osMac string = "darwin"
 const osLinux string = "linux"
+
 var pathSeparate string = ":"
 var fileSeparate string = "/"
 
@@ -62,24 +63,21 @@ func main() {
 	}
 
 	// ニュース蘭の情報を取得する
-	s := page.AllByClass("_2j0udhv5jERZtYzddeDwcv")
-	max, _ := s.Count()
+	classes, err := getAllByClass(page, "_2j0udhv5jERZtYzddeDwcv")
 
-	for i := 0; i < max; i++ {
-		fmt.Println(s.At(i).Text())
+	for _, class := range classes {
+		fmt.Println(class)
 	}
 
 	time.Sleep(1 * time.Second)
+
 	// XPathにFillに"Golang"を入力
-	err = page.FindByXPath("/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/input").Fill("Golang")
-	if err != nil {
+	if err = inputByXPath(page, "/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/input", "Golang"); err != nil {
 		log.Println(err)
 	}
 
-	time.Sleep(1 * time.Second)
 	// XPathに指定された要素をクリック
-	err = page.FindByXPath("/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/button/span").Click()
-	if err != nil {
+	if err = clickByXPath(page, "/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/button/span"); err != nil {
 		log.Println(err)
 	}
 
@@ -88,24 +86,56 @@ func main() {
 	// mainプログラム（メインゴルーチン）終了時に、チャネルを開放する（チャネル使用時は開放は必須。）
 	defer close(fin)
 
-	// 別のプロセス（ゴルーチン）で無名関数を実行する（並列処理）。
-	go func(fin chan<- struct{}) {
-		// 標準入力を取得する
-		sc := bufio.NewScanner(os.Stdin)
-		for {
-			// 1秒待つ
-			time.Sleep(1 * time.Second)
-			// １行取得（文字の末尾に改行が入っていること）
-			sc.Scan()
-			// 入力された文字がquitまたはexitだった場合は、finチャネルに空構造体を送信する
-			if sc.Text() == "quit" || sc.Text() == "exit" {
-				fin <- struct{}{}
-			}
-		}
-	}(fin)
+	// 別のプロセス（ゴルーチン）で実行する（並列処理）。
+	go finishCheck(fin)
 
 	// finチャネルに値が送信するまで待つ
-	<- fin
+	<-fin
+}
+
+func finishCheck(fin chan<- struct{}) {
+	// 標準入力を取得する
+	sc := bufio.NewScanner(os.Stdin)
+	for {
+		// 1秒待つ
+		time.Sleep(1 * time.Second)
+		// １行取得（文字の末尾に改行が入っていること）
+		sc.Scan()
+		// 入力された文字がquitまたはexitだった場合は、finチャネルに空構造体を送信する
+		if sc.Text() == "quit" || sc.Text() == "exit" {
+			fin <- struct{}{}
+		}
+	}
+}
+
+func getAllByClass(page *agouti.Page, className string) ([]string, error) {
+	// ニュース蘭の情報を取得する
+	item := page.AllByClass(className)
+	count, err := item.Count()
+
+	var result []string = []string{}
+
+	for i := 0; i < count; i++ {
+		text, err := item.At(i).Text()
+		if err != nil {
+			break
+		}
+		result = append(result, text)
+	}
+
+	return result, err
+}
+
+func inputByXPath(page *agouti.Page, xpath, input string) error {
+	err := page.FindByXPath(xpath).Fill(input)
+	time.Sleep(1 * time.Second)
+	return err
+}
+
+func clickByXPath(page *agouti.Page, xpath string) error {
+	err := page.FindByXPath(xpath).Click()
+	time.Sleep(1 * time.Second)
+	return err
 }
 
 func setENV(dir string) error {
@@ -116,7 +146,6 @@ func setENV(dir string) error {
 
 	return err
 }
-
 
 func getDriverPath(dir string) (path string) {
 	var twitterBotPath string = strings.Split(dir, "TwitterBot")[0]
