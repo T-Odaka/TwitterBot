@@ -1,0 +1,111 @@
+{{define "index"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebController</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+
+</head>
+<body class="container-fluid bg-light ml-0 mr-0">
+    <H1>スクレイピングサンプル</H1>
+    <hr />
+    <div id="root"></div>
+</body>
+<script type="text/babel">
+    axios.defaults.headers.post["Content-Type"] = "application/x-www-form-urlencoded";
+
+    class Tables extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                paths: [1]
+            };
+            this.addPath = this.addPath.bind(this);
+            this.removeItem = this.removeItem.bind(this);
+            this.runScrape = this.runScrape.bind(this);
+        }
+
+        addPath(e) {
+            let p = this.state.paths;
+
+            if (p.indexOf(p.length+1) != -1) {
+                p.push(p[p.length-1]+1)
+            } else {
+                p.push(p.length + 1);
+            }
+            this.setState({paths: p});
+        }
+
+        removeItem(e) {
+            let itemNum = e.currentTarget.getAttribute("data");
+            let p = this.state.paths;
+            p.splice(itemNum-1, 1);
+            this.setState({paths: p});
+        }
+
+        runScrape(e) {
+            let xpath = e.currentTarget.getAttribute("data")
+            window.alert(xpath)
+        }
+
+        render(){
+            return (
+            <div className="bg-light">
+                <div className="mb-1">
+                    <button className="btn btn-success mr-2" onClick={this.addPath}>Add</button>
+                    <button className="btn btn-primary" onClick={this.runScrape}>Run</button>
+                </div>
+                <table className="table table-border table-stripe">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>XPath</th>
+                            <th>Control</th>
+                            <th>Text</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        { this.state.paths.map((index) =>
+                                <tr>
+                                    <td>{index}</td>
+                                    <td><input　className="form form-control" data="{index}_xpath"></input></td>
+                                    <td><select className="form form-control" data="{index}_control">
+                                        <option name="{index}_control">データ抽出</option>
+                                        <option name="{index}_control">クリック</option>
+                                        <option name="{index}_control">入力</option>
+                                    </select></td>
+                                    <td><input className="form form-control" data="{index}_text"></input></td>
+                                </tr>
+                            )
+                        }
+                    </tbody>
+                </table>
+            </div>
+            )
+        }
+    }
+
+    class App extends React.Component {
+        constructor(props){
+            super(props)
+        }
+        render(){
+            return (
+                <div>
+                    <Tables />
+                </div>
+            )
+        }
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"))
+</script>
+</html>
+{{end}}
