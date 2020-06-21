@@ -117,6 +117,8 @@ func main() {
 		log.Println(err)
 	}
 
+	_ = page.Navigate("localhost:1323")
+
 	// finという名前の構造体チャネルを作成
 	fin := make(chan struct{}, 1)
 	// mainプログラム（メインゴルーチン）終了時に、チャネルを開放する（チャネル使用時は開放は必須。）

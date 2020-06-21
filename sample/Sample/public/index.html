@@ -14,7 +14,10 @@
 
 </head>
 <body class="container-fluid bg-light ml-0 mr-0">
-    <H1>スクレイピングサンプル</H1>
+    <div class="row">
+        <H1 class="col-6">スクレイピングサンプル</H1>
+        <H3>HostIP {{.IP}}</H3>
+    </div>
     <hr />
     <div id="root"></div>
 </body>
@@ -25,22 +28,31 @@
         constructor(props) {
             super(props);
             this.state = {
-                paths: [1]
+                paths: [1],
+                controls: [{}],
+                isInputLineEnables: [false]
             };
+
             this.addPath = this.addPath.bind(this);
             this.removeItem = this.removeItem.bind(this);
             this.runScrape = this.runScrape.bind(this);
+            this.inputLines = this.inputLines.bind(this);
         }
 
         addPath(e) {
             let p = this.state.paths;
+            let enableList = this.state.isInputLineEnables;
+            enableList.push(false);
 
             if (p.indexOf(p.length+1) != -1) {
                 p.push(p[p.length-1]+1)
             } else {
                 p.push(p.length + 1);
             }
-            this.setState({paths: p});
+            this.setState({
+                paths: p,
+                isInputLineEnables: enableList
+            });
         }
 
         removeItem(e) {
@@ -51,8 +63,54 @@
         }
 
         runScrape(e) {
-            let xpath = e.currentTarget.getAttribute("data")
+            let xpath = e.currentTarget.getAttribute("data");
             window.alert(xpath)
+        }
+
+        inputLines(e) {
+            let index = e.target.getAttribute("data");
+
+            let objs = this.state.controls;
+
+            let obj = {
+                id: index,
+                xpath: "",
+                control: "",
+                text: ""
+            };
+
+            if (objs.length >= index) {
+                obj = objs[index-1];
+            }
+
+            switch (e.target.getAttribute("name")) {
+                case "xpath":
+                    obj.xpath = e.target.value;
+                    break;
+                case "control":
+                    obj.control = e.target.value;
+                    let enableList = this.state.isInputLineEnables;
+
+                    if (e.target.value === "入力") {
+                        enableList[index - 1] = true;
+                        this.setState({isInputLineEnables: enableList});
+                    } else {
+                        enableList[index - 1] = false;
+                        this.setState({isInputLineEnables: enableList})
+                    }
+                    break;
+                case "text":
+                    obj.text = e.target.value;
+                    break;
+            }
+
+            if (index >= objs.length) {
+                objs[index-1] = obj;
+            } else {
+                objs.push(obj);
+            }
+            this.setState({controls: objs});
+            console.log(this.state.controls);
         }
 
         render(){
@@ -75,13 +133,13 @@
                         { this.state.paths.map((index) =>
                                 <tr>
                                     <td>{index}</td>
-                                    <td><input　className="form form-control" data="{index}_xpath"></input></td>
-                                    <td><select className="form form-control" data="{index}_control">
-                                        <option name="{index}_control">データ抽出</option>
-                                        <option name="{index}_control">クリック</option>
-                                        <option name="{index}_control">入力</option>
+                                    <td><input className="form form-control" data={index} name="xpath" onChange={this.inputLines}></input></td>
+                                    <td><select className="form form-control" data={index} name="control" onChange={this.inputLines}>
+                                        <option data={index} name="get">データ抽出</option>
+                                        <option data={index} name="click">クリック</option>
+                                        <option data={index} name="input">入力</option>
                                     </select></td>
-                                    <td><input className="form form-control" data="{index}_text"></input></td>
+                                    <td><input className="form form-control" data={index} name="text" onChange={this.inputLines} disabled={!this.state.isInputLineEnables[index-1]}></input></td>
                                 </tr>
                             )
                         }
