@@ -26,7 +26,13 @@ var pathSeparate string = ":"
 var fileSeparate string = "/"
 
 func indexHandler(c echo.Context) error {
-	return c.Render(http.StatusOK, "index", nil)
+	data := struct {
+		IP string
+	}{
+		IP: c.Request().Host,
+	}
+
+	return c.Render(http.StatusOK, "index", data)
 }
 
 type Template struct {
