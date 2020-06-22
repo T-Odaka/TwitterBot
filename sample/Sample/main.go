@@ -30,6 +30,7 @@ type Param struct {
 	XPath string `json: "xpath"`
 	Control string `json: "control"`
 	Text string `json: "text"`
+	URL string `json: "url"`
 }
 
 type Params struct {
