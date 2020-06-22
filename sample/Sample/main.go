@@ -36,6 +36,8 @@ type Params struct {
 	Data []Param `json: "data"`
 }
 
+type Pm map[int]Param
+
 func indexHandler(c echo.Context) error {
 	data := struct {
 		IP string
@@ -47,9 +49,7 @@ func indexHandler(c echo.Context) error {
 }
 
 func runHandler(c echo.Context) error {
-	param := new(Param)
-
-	fmt.Println(c.QueryParam("data"))
+	param := new(Pm)
 
 	if err := c.Bind(param); err != nil {
 		log.Fatal(err)

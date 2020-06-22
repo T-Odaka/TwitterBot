@@ -49,6 +49,14 @@
             let enableList = this.state.isInputLineEnables;
             enableList.push(false);
 
+            let control = this.state.controls;
+            control.push({
+                id: this.state.controls.length + 1,
+                xpath: "",
+                control: "データ抽出",
+                text: ""
+            });
+
             if (p.indexOf(p.length+1) != -1) {
                 p.push(p[p.length-1]+1)
             } else {
@@ -56,6 +64,7 @@
             }
             this.setState({
                 paths: p,
+                controls: control,
                 isInputLineEnables: enableList
             });
         }
@@ -115,7 +124,7 @@
             } else {
                 objs.push(obj);
             }
-            this.setState({controls: objs});
+            // this.setState({controls: objs});
             console.log(this.state.controls);
         }
 
@@ -174,10 +183,10 @@
     }
 
     function run(params) {
-        // let param = convertArrayToObj(params);
-        console.log(params);
+        let param = convertArrayToObj(params);
+        console.log(param);
 
-        axios.post("http://{{.IP}}/run", params[0]).then((result) => {
+        axios.post("http://{{.IP}}/run", param).then((result) => {
             console.log(result);
         });
     }
