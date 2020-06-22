@@ -83,19 +83,20 @@
         }
 
         inputLines(e) {
-            let index = e.target.getAttribute("data");
+            let index = Number(e.target.getAttribute("data"));
 
             let objs = this.state.controls;
-
-            let obj = {
-                id: index,
-                xpath: "",
-                control: "",
-                text: ""
-            };
+            let obj = {};
 
             if (objs.length >= index) {
                 obj = objs[index-1];
+            } else {
+                obj = {
+                    id: index,
+                    xpath: "",
+                    control: "",
+                    text: ""
+                };
             }
 
             switch (e.target.getAttribute("name")) {
@@ -119,12 +120,12 @@
                     break;
             }
 
-            if (index >= objs.length) {
+            if (objs.length >= index) {
                 objs[index-1] = obj;
             } else {
                 objs.push(obj);
             }
-            // this.setState({controls: objs});
+            this.setState({controls: objs});
             console.log(this.state.controls);
         }
 
