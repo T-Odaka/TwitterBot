@@ -25,6 +25,17 @@ const osLinux string = "linux"
 var pathSeparate string = ":"
 var fileSeparate string = "/"
 
+type Param struct {
+	Id int `json: "id"`
+	XPath string `json: "xpath"`
+	Control string `json: "control"`
+	Text string `json: "text"`
+}
+
+type Params struct {
+	Data []Param `json: "data"`
+}
+
 func indexHandler(c echo.Context) error {
 	data := struct {
 		IP string
@@ -33,6 +44,18 @@ func indexHandler(c echo.Context) error {
 	}
 
 	return c.Render(http.StatusOK, "index", data)
+}
+
+func runHandler(c echo.Context) error {
+	param := new(Param)
+
+	fmt.Println(c.QueryParam("data"))
+
+	if err := c.Bind(param); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(*param)
+	return c.JSON(http.StatusOK, param)
 }
 
 type Template struct {
@@ -54,6 +77,7 @@ func main() {
 
 	go func(e *echo.Echo) {
 		e.GET("/", indexHandler)
+		e.POST("/run", runHandler)
 		e.Logger.Fatal(e.Start(":1323"))
 	}(e)
 

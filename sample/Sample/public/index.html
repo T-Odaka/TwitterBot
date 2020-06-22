@@ -29,7 +29,12 @@
             super(props);
             this.state = {
                 paths: [1],
-                controls: [{}],
+                controls: [{
+                    id: 1,
+                    xpath: "",
+                    control: "データ抽出",
+                    text: ""
+                }],
                 isInputLineEnables: [false]
             };
 
@@ -63,8 +68,9 @@
         }
 
         runScrape(e) {
-            let xpath = e.currentTarget.getAttribute("data");
-            window.alert(xpath)
+            // let xpath = e.currentTarget.getAttribute("data");
+            // window.alert(xpath);
+            run(this.state.controls);
         }
 
         inputLines(e) {
@@ -161,6 +167,19 @@
                 </div>
             )
         }
+    }
+
+    function convertArrayToObj(array) {
+        return Object.assign({}, array);
+    }
+
+    function run(params) {
+        // let param = convertArrayToObj(params);
+        console.log(params);
+
+        axios.post("http://{{.IP}}/run", params[0]).then((result) => {
+            console.log(result);
+        });
     }
 
     ReactDOM.render(<App />, document.getElementById("root"))
