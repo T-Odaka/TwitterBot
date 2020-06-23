@@ -17,7 +17,6 @@ import (
 	"time"
 )
 
-const url string = "https://www.yahoo.co.jp/"
 const osWindows string = "windows"
 const osMac string = "darwin"
 const osLinux string = "linux"
@@ -165,28 +164,9 @@ func main() {
 		}
 	}(rhs, page)
 
-	err = page.Navigate(url) // 指定したurlにアクセスする
+	err = page.Navigate("localhost:1323") // 指定したurlにアクセスする
 	if err != nil {
 		log.Fatal(err)
-	}
-
-	// ニュース蘭の情報を取得する
-	classes, err := getAllByClass(page, "_2j0udhv5jERZtYzddeDwcv")
-
-	for _, class := range classes {
-		fmt.Println(class)
-	}
-
-	time.Sleep(1 * time.Second)
-
-	// XPathにFillに"Golang"を入力
-	if err = inputByXPath(page, "/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/input", "Golang"); err != nil {
-		log.Println(err)
-	}
-
-	// XPathに指定された要素をクリック
-	if err = clickByXPath(page, "/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/button/span"); err != nil {
-		log.Println(err)
 	}
 
 	// finという名前の構造体チャネルを作成
