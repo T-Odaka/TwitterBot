@@ -141,9 +141,12 @@ func main() {
 	go func (rhs runHandleStruct, page *agouti.Page) {
 		for{
 			p := <-rhs.param
+			if err := page.Navigate(p[0].URL); err != nil {
+				log.Fatal(err)
+			}
 
 			// paramフィールドが受信するまで待機、受信したらstdoutに内容を表示
-			fmt.Printf("chan: :%v\n",p)
+			fmt.Printf("chan: %v\n",p)
 
 			for i, _ := range p {
 				switch p[i].Control {
