@@ -159,11 +159,9 @@ func main() {
 					time.Sleep(1 * time.Second)
 					_ = inputByXPath(page, p[i].XPath, p[i].Text)
 				}
-				fmt.Println(p[i])
 			}
 		}
 	}(rhs, page)
-
 
 	err = page.Navigate(url) // 指定したurlにアクセスする
 	if err != nil {

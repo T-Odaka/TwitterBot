@@ -36,7 +36,8 @@
                     text: "",
                     url: ""
                 }],
-                isInputLineEnables: [false]
+                isInputLineEnables: [false],
+                isInputCompleteURL: false
             };
 
             this.addPath = this.addPath.bind(this);
@@ -123,6 +124,7 @@
                     break;
                 case "url":
                     obj.url = e.target.value;
+                    this.setState({isInputCompleteURL: e.target.value !== ""});
                     break;
             }
 
@@ -140,7 +142,7 @@
             <div className="bg-light">
                 <div className="mb-2 ml-2 row">
                     <button className="btn btn-success mr-2 col-2" onClick={this.addPath}>Add</button>
-                    <button className="btn btn-primary mr-2 col-2" onClick={this.runScrape}>Run</button>
+                    <button className="btn btn-primary mr-2 col-2" onClick={this.runScrape} disabled={!this.state.isInputCompleteURL}>Run</button>
                     <input className="form form-control col-6 offset-1" placeholder="plz input base URL here." data={1} name="url" onChange={this.inputLines}/>
                 </div>
                 <table className="table table-border table-stripe">
