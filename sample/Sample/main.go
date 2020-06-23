@@ -151,7 +151,9 @@ func main() {
 			for i, _ := range p {
 				switch p[i].Control {
 				case "データ抽出":
-					fmt.Println(p[i])
+					time.Sleep(1 * time.Second)
+					s, _ := getByXPath(page, p[i].XPath)
+					fmt.Println(s)
 				case "クリック":
 					time.Sleep(1 * time.Second)
 					_ = clickByXPath(page, p[i].XPath)
@@ -214,34 +216,47 @@ func finishCheck(fin chan<- struct{}) {
 	}
 }
 
+func getByXPath(page *agouti.Page, xpath string) (string, error) {
+	item := page.FindByXPath(xpath)
+	return item.Text()
+}
+
 func getAllByClass(page *agouti.Page, className string) ([]string, error) {
 	// ニュース蘭の情報を取得する
 	item := page.AllByClass(className)
 	count, err := item.Count()
+
+	if err != nil {
+		return nil, err
+	}
 
 	var result []string = []string{}
 
 	for i := 0; i < count; i++ {
 		text, err := item.At(i).Text()
 		if err != nil {
-			break
+			return nil, err
 		}
 		result = append(result, text)
 	}
 
-	return result, err
+	return result, nil
 }
 
 func inputByXPath(page *agouti.Page, xpath, input string) error {
-	err := page.FindByXPath(xpath).Fill(input)
+	if err := page.FindByXPath(xpath).Fill(input); err != nil {
+		return err
+	}
 	time.Sleep(1 * time.Second)
-	return err
+	return nil
 }
 
 func clickByXPath(page *agouti.Page, xpath string) error {
-	err := page.FindByXPath(xpath).Click()
+	if err := page.FindByXPath(xpath).Click(); err != nil {
+		return err
+	}
 	time.Sleep(1 * time.Second)
-	return err
+	return nil
 }
 
 func setENV(dir string) error {
