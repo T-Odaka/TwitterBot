@@ -49,13 +49,18 @@ func indexHandler(c echo.Context) error {
 	return c.Render(http.StatusOK, "index", data)
 }
 
-func runHandler(c echo.Context) error {
+func (rhs *runHandleStruct) runHandler(c echo.Context) error {
+	// Pmの初期化
 	param := new(Pm)
 
 	if err := c.Bind(param); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(*param)
+
+	// 取得したパラメータをrunHandleStructチャネルへ送信
+	rhs.param <- *param
+
+	// HTMLにレスポンスを返送
 	return c.JSON(http.StatusOK, param)
 }
 
@@ -67,6 +72,12 @@ func (t *Template) Render(w io.Writer, name string, data interface{}, c echo.Con
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
+// runハンドラ実行結果を取得するための構造体
+// Pm型のparamフィールドのチャネルで通信します。
+type runHandleStruct struct {
+	param chan Pm
+}
+
 func main() {
 	e := echo.New()
 	e.HideBanner = true
@@ -76,11 +87,24 @@ func main() {
 	t := &Template{templates: template.Must(template.ParseGlob("public/*.html"))}
 	e.Renderer = t
 
-	go func(e *echo.Echo) {
+	// runHandleStructを宣言、paramフィールドにPmのチャネルを宣言
+	rhs := runHandleStruct{param: make(chan Pm)}
+
+	// paramフィールドのチャネルを受信するためのゴルーチンを開始
+	go func (rhs runHandleStruct) {
+		for{
+			// paramフィールドが受信するまで待機、受信したらstdoutに内容を表示
+			fmt.Printf("chan: :%v\n",<-rhs.param)
+		}
+	}(rhs)
+
+	// Webサーバの開始用のゴルーチン
+	// メインゴルーチンで実行してしまうと、他の処理をブロックしてしまうため、ゴルーチンを分けています。
+	go func(e *echo.Echo, rhs runHandleStruct) {
 		e.GET("/", indexHandler)
-		e.POST("/run", runHandler)
+		e.POST("/run", rhs.runHandler)
 		e.Logger.Fatal(e.Start(":1323"))
-	}(e)
+	}(e, rhs)
 
 	// アプリのディレクトリを取得する
 	dir, err := os.Getwd()
@@ -89,6 +113,7 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Webドライバの初期化（Chromeの場合）
 	driver := agouti.ChromeDriver(
 		agouti.ChromeOptions("args", []string{
 			// ヘッドレスモード（ブラウザ非表示）でChrome起動の設定
@@ -141,8 +166,6 @@ func main() {
 	if err = clickByXPath(page, "/html/body/div/div[1]/header/section[1]/div/form/fieldset/span/button/span"); err != nil {
 		log.Println(err)
 	}
-
-	_ = page.Navigate("localhost:1323")
 
 	// finという名前の構造体チャネルを作成
 	fin := make(chan struct{}, 1)
