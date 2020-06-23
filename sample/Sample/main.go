@@ -87,16 +87,7 @@ func main() {
 	t := &Template{templates: template.Must(template.ParseGlob("public/*.html"))}
 	e.Renderer = t
 
-	// runHandleStructを宣言、paramフィールドにPmのチャネルを宣言
 	rhs := runHandleStruct{param: make(chan Pm)}
-
-	// paramフィールドのチャネルを受信するためのゴルーチンを開始
-	go func (rhs runHandleStruct) {
-		for{
-			// paramフィールドが受信するまで待機、受信したらstdoutに内容を表示
-			fmt.Printf("chan: :%v\n",<-rhs.param)
-		}
-	}(rhs)
 
 	// Webサーバの開始用のゴルーチン
 	// メインゴルーチンで実行してしまうと、他の処理をブロックしてしまうため、ゴルーチンを分けています。
@@ -142,6 +133,34 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// runHandleStructを宣言、paramフィールドにPmのチャネルを宣言
+	//rhs := runHandleStruct{param: make(chan Pm)}
+
+	// paramフィールドのチャネルを受信するためのゴルーチンを開始
+	go func (rhs runHandleStruct, page *agouti.Page) {
+		for{
+			p := <-rhs.param
+
+			// paramフィールドが受信するまで待機、受信したらstdoutに内容を表示
+			fmt.Printf("chan: :%v\n",p)
+
+			for i, _ := range p {
+				switch p[i].Control {
+				case "データ抽出":
+					fmt.Println(p[i])
+				case "クリック":
+					time.Sleep(1 * time.Second)
+					_ = clickByXPath(page, p[i].XPath)
+				case "入力":
+					time.Sleep(1 * time.Second)
+					_ = inputByXPath(page, p[i].XPath, p[i].Text)
+				}
+				fmt.Println(p[i])
+			}
+		}
+	}(rhs, page)
+
 
 	err = page.Navigate(url) // 指定したurlにアクセスする
 	if err != nil {
