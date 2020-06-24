@@ -83,7 +83,14 @@ func main() {
 	e.Use(middleware.CORS())
 	e.Use(middleware.Logger())
 
-	t := &Template{templates: template.Must(template.ParseGlob("public/*.html"))}
+	// アプリのディレクトリを取得する
+	dir, err := os.Getwd()
+
+	if err = setENV(dir); err != nil {
+		log.Fatal(err)
+	}
+
+	t := &Template{templates: template.Must(template.ParseGlob(fmt.Sprintf("%s/public/*.html",getPublicFilePath(dir))))}
 	e.Renderer = t
 
 	rhs := runHandleStruct{param: make(chan Pm)}
@@ -95,13 +102,6 @@ func main() {
 		e.POST("/run", rhs.runHandler)
 		e.Logger.Fatal(e.Start(":1323"))
 	}(e, rhs)
-
-	// アプリのディレクトリを取得する
-	dir, err := os.Getwd()
-
-	if err = setENV(dir); err != nil {
-		log.Fatal(err)
-	}
 
 	// Webドライバの初期化（Chromeの場合）
 	driver := agouti.ChromeDriver(
@@ -143,8 +143,6 @@ func main() {
 			if err := page.Navigate(p[0].URL); err != nil {
 				log.Fatal(err)
 			}
-
-			// paramフィールドが受信するまで待機、受信したらstdoutに内容を表示
 			fmt.Printf("chan: %v\n",p)
 
 			for i, _ := range p {
@@ -276,6 +274,22 @@ func getUserDataPath(dir string) (path string) {
 		path = fmt.Sprintf("%s%s", twitterBotPath, "TwitterBot/ChromeUserData")
 	case osLinux:
 		path = fmt.Sprintf("%s%s", twitterBotPath, "TwitterBot/ChromeUserData")
+	default:
+		log.Fatal("OS could not be determined.")
+	}
+	return
+}
+
+func getPublicFilePath(dir string) (path string) {
+	var twitterBotPath string = strings.Split(dir, "TwitterBot")[0]
+
+	switch runtime.GOOS {
+	case osWindows:
+		path = fmt.Sprintf("%s%s", twitterBotPath, filepath.FromSlash("TwitterBot/sample/Sample"))
+	case osMac:
+		path = fmt.Sprintf("%s%s", twitterBotPath, "TwitterBot/sample/Sample")
+	case osLinux:
+		path = fmt.Sprintf("%s%s", twitterBotPath, "TwitterBot/sample/Sample")
 	default:
 		log.Fatal("OS could not be determined.")
 	}
