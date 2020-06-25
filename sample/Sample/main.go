@@ -137,30 +137,7 @@ func main() {
 	//rhs := runHandleStruct{param: make(chan Pm)}
 
 	// paramフィールドのチャネルを受信するためのゴルーチンを開始
-	go func (rhs runHandleStruct, page *agouti.Page) {
-		for{
-			p := <-rhs.param
-			if err := page.Navigate(p[0].URL); err != nil {
-				log.Fatal(err)
-			}
-			fmt.Printf("chan: %v\n",p)
-
-			for i, _ := range p {
-				switch p[i].Control {
-				case "データ抽出":
-					time.Sleep(1 * time.Second)
-					s, _ := getByXPath(page, p[i].XPath)
-					fmt.Println(s)
-				case "クリック":
-					time.Sleep(1 * time.Second)
-					_ = clickByXPath(page, p[i].XPath)
-				case "入力":
-					time.Sleep(1 * time.Second)
-					_ = inputByXPath(page, p[i].XPath, p[i].Text)
-				}
-			}
-		}
-	}(rhs, page)
+	go getParameterChan(rhs, page)
 
 	err = page.Navigate("localhost:1323") // 指定したurlにアクセスする
 	if err != nil {
@@ -177,6 +154,50 @@ func main() {
 
 	// finチャネルに値が送信するまで待つ
 	<-fin
+}
+
+// runHandlerに送信されてきたリクエスト毎にブラウザの操作
+func getParameterChan(rhs runHandleStruct, page *agouti.Page) {
+	for{
+		p := <-rhs.param
+		if err := page.Navigate(p[0].URL); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("chan: %v\n",p)
+
+		for i, _ := range p {
+			switch p[i].Control {
+			case "データ抽出":
+				time.Sleep(1 * time.Second)
+				s, err := getByXPath(page, p[i].XPath)
+				file, err := os.Create("out.txt")
+
+				defer func(){
+					if err := file.Close(); err != nil {
+						log.Fatal(err)
+					}
+				}()
+
+				if err != nil {
+					log.Fatal(err)
+				}
+
+				if _, err = file.Write([]byte(s)); err != nil {
+					log.Fatal(err)
+				}
+			case "クリック":
+				time.Sleep(1 * time.Second)
+				if err := clickByXPath(page, p[i].XPath); err != nil {
+					log.Fatal(err)
+				}
+			case "入力":
+				time.Sleep(1 * time.Second)
+				if err := inputByXPath(page, p[i].XPath, p[i].Text); err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+	}
 }
 
 func finishCheck(fin chan<- struct{}) {
