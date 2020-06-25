@@ -1,0 +1,207 @@
+{{define "index"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebController</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.34/browser.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@16/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+
+</head>
+<body class="container-fluid bg-light ml-0 mr-0">
+    <div class="row">
+        <H1 class="col-6">スクレイピングサンプル</H1>
+        <H3>HostIP {{.IP}}</H3>
+    </div>
+    <hr />
+    <div id="root"></div>
+</body>
+<script type="text/babel">
+    axios.defaults.headers.post["Content-Type"] = "application/x-www-form-urlencoded";
+
+    class Tables extends React.Component {
+        constructor(props) {
+            super(props);
+            this.state = {
+                paths: [1],
+                controls: [{
+                    id: 1,
+                    xpath: "",
+                    control: "データ抽出",
+                    text: "",
+                    url: ""
+                }],
+                isInputLineEnables: [false],
+                isInputCompleteURL: false
+            };
+
+            this.addPath = this.addPath.bind(this);
+            this.removeItem = this.removeItem.bind(this);
+            this.runScrape = this.runScrape.bind(this);
+            this.inputLines = this.inputLines.bind(this);
+        }
+
+        addPath(e) {
+            let p = this.state.paths;
+            let enableList = this.state.isInputLineEnables;
+            enableList.push(false);
+
+            let control = this.state.controls;
+            control.push({
+                id: this.state.controls.length + 1,
+                xpath: "",
+                control: "データ抽出",
+                text: "",
+                url: ""
+            });
+
+            if (p.indexOf(p.length+1) !== -1) {
+                p.push(p[p.length-1]+1)
+            } else {
+                p.push(p.length + 1);
+            }
+            this.setState({
+                paths: p,
+                controls: control,
+                isInputLineEnables: enableList
+            });
+        }
+
+        removeItem(e) {
+            let itemNum = e.currentTarget.getAttribute("data");
+            let p = this.state.paths;
+            p.splice(itemNum-1, 1);
+            this.setState({paths: p});
+        }
+
+        runScrape(e) {
+            // let xpath = e.currentTarget.getAttribute("data");
+            // window.alert(xpath);
+            run(this.state.controls);
+        }
+
+        inputLines(e) {
+            let index = Number(e.target.getAttribute("data"));
+
+            let objs = this.state.controls;
+            let obj = {};
+
+            if (objs.length >= index) {
+                obj = objs[index-1];
+            } else {
+                obj = {
+                    id: index,
+                    xpath: "",
+                    control: "",
+                    text: "",
+                    url: ""
+                };
+            }
+
+            switch (e.target.getAttribute("name")) {
+                case "xpath":
+                    obj.xpath = e.target.value;
+                    break;
+                case "control":
+                    obj.control = e.target.value;
+                    let enableList = this.state.isInputLineEnables;
+
+                    if (e.target.value === "入力") {
+                        enableList[index - 1] = true;
+                        this.setState({isInputLineEnables: enableList});
+                    } else {
+                        enableList[index - 1] = false;
+                        this.setState({isInputLineEnables: enableList})
+                    }
+                    break;
+                case "text":
+                    obj.text = e.target.value;
+                    break;
+                case "url":
+                    obj.url = e.target.value;
+                    this.setState({isInputCompleteURL: e.target.value !== ""});
+                    break;
+            }
+
+            if (objs.length >= index) {
+                objs[index-1] = obj;
+            } else {
+                objs.push(obj);
+            }
+            this.setState({controls: objs});
+            console.log(this.state.controls);
+        }
+
+        render(){
+            return (
+            <div className="bg-light">
+                <div className="mb-2 ml-2 row">
+                    <button className="btn btn-success mr-2 col-2" onClick={this.addPath}>Add</button>
+                    <button className="btn btn-primary mr-2 col-2" onClick={this.runScrape} disabled={!this.state.isInputCompleteURL}>Run</button>
+                    <input className="form form-control col-6 offset-1" placeholder="plz input base URL here." data={1} name="url" onChange={this.inputLines}/>
+                </div>
+                <table className="table table-border table-stripe">
+                    <thead>
+                        <tr>
+                            <th className="text-center">No</th>
+                            <th className="text-center">XPath</th>
+                            <th className="text-center">Control</th>
+                            <th className="text-center">Text</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        { this.state.paths.map((index) =>
+                                <tr>
+                                    <td>{index}</td>
+                                    <td><input className="form form-control" data={index} name="xpath" onChange={this.inputLines}></input></td>
+                                    <td><select className="form form-control" data={index} name="control" onChange={this.inputLines}>
+                                        <option selected data={index} name="get">データ抽出</option>
+                                        <option data={index} name="click">クリック</option>
+                                        <option data={index} name="input">入力</option>
+                                    </select></td>
+                                    <td><input className="form form-control" data={index} name="text" onChange={this.inputLines} disabled={!this.state.isInputLineEnables[index-1]}></input></td>
+                                </tr>
+                            )
+                        }
+                    </tbody>
+                </table>
+            </div>
+            )
+        }
+    }
+
+    class App extends React.Component {
+        constructor(props){
+            super(props)
+        }
+        render(){
+            return (
+                <div>
+                    <Tables />
+                </div>
+            )
+        }
+    }
+
+    function convertArrayToObj(array) {
+        return Object.assign({}, array);
+    }
+
+    function run(params) {
+        let param = convertArrayToObj(params);
+        console.log(param);
+
+        axios.post("http://{{.IP}}/run", param).then((result) => {
+            console.log(result);
+        });
+    }
+
+    ReactDOM.render(<App />, document.getElementById("root"))
+</script>
+</html>
+{{end}}
