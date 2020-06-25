@@ -84,7 +84,7 @@ func main() {
 	e.Use(middleware.Logger())
 
 	// アプリのディレクトリを取得する
-	dir, err := os.Getwd()
+	dir, err := os.Executable()
 
 	if err = setENV(dir); err != nil {
 		log.Fatal(err)
